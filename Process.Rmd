@@ -1,0 +1,148 @@
+---
+title: 'Marketing Analysis Euromotors: Prepare'
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+library(DataExplorer) #para datos faltantes
+library(VIM) #para imputación de datos faltantes
+```
+
+
+
+
+###Lectura de datos del CSV
+
+```{r}
+db<-read.csv("Base de datos caso práctico.csv")
+
+View(db)
+
+dim(db)
+
+```
+
+Son 5000 filas y 124 columnas
+
+###Busqueda de duplicados
+
+```{r}
+n_occur<-data.frame(table(db$custid))
+n_occur[n_occur$Freq>1,]
+```
+
+
+No hay customers duplicados
+
+
+###Cambio de variables categóricas a factors
+
+```{r}
+db$region<-as.factor(db$region)
+db$townsize<-as.factor(db$townsize)
+db$gender<-as.factor(db$gender)
+db$agecat<-as.factor(db$agecat)
+db$edcat<-as.factor(db$edcat)
+db$jobcat<-as.factor(db$jobcat)
+db$union<-as.factor(db$union)
+db$empcat<-as.factor(db$empcat)
+db$retire<-as.factor(db$retire)
+db$inccat<-as.factor(db$inccat)
+db$default<-as.factor(db$default)
+db$jobsat<-as.factor(db$jobsat)
+db$marital<-as.factor(db$marital)
+db$spoused<-as.factor(db$spoused)
+db$spousedcat<-as.factor(db$spousedcat)
+db$homeown<-as.factor(db$homeown)
+db$hometype<-as.factor(db$hometype)
+db$addresscat<-as.factor(db$addresscat)
+db$carown<-as.factor(db$carown)
+db$cartype<-as.factor(db$cartype)
+db$carcatvalue<-as.factor(db$carcatvalue)
+db$carbought<-as.factor(db$carbought)
+db$carbuy<-as.factor(db$carbuy)
+db$carcatvalue<-as.factor(db$carcatvalue)
+db$commute<-as.factor(db$commute)
+db$commutecat<-as.factor(db$commutecat)
+db$commutecar<-as.factor(db$commutecar)
+db$commuterail<-as.factor(db$commuterail)
+db$commutebus<-as.factor(db$commutebus)
+db$commutemotorcycle<-as.factor(db$commutemotorcycle)
+db$commutepublic<-as.factor(db$commutepublic)
+db$commutebike<-as.factor(db$commutebike)
+db$commutewalk<-as.factor(db$commutewalk)
+db$commutenonmotor<-as.factor(db$commutenonmotor)
+db$telecommute<-as.factor(db$telecommute)
+db$reason<-as.factor(db$reason)
+db$birthmonth<-as.factor(db$birthmonth)
+db$polview<-as.factor(db$polview)
+db$polparty<-as.factor(db$polparty)
+db$vote<-as.factor(db$vote)
+db$card<-as.factor(db$card)
+db$cardtype<-as.factor(db$cardtype)
+db$cardbenefit<-as.factor(db$cardbenefit)
+db$card2<-as.factor(db$card2)
+db$card2type<-as.factor(db$card2type)
+db$card2benefit<-as.factor(db$card2benefit)
+db$active<-as.factor(db$active)
+db$bfast<-as.factor(db$bfast)
+db$churn<-as.factor(db$churn)
+db$tollfree<-as.factor(db$tollfree)
+db$equip<-as.factor(db$equip)
+db$callcard<-as.factor(db$callcard)
+db$wireless<-as.factor(db$wireless)
+db$wiremon<-as.factor(db$wiremon)
+db$multline<-as.factor(db$multline)
+db$voice<-as.factor(db$voice)
+db$pager<-as.factor(db$pager)
+db$internet<-as.factor(db$internet)
+db$callid<-as.factor(db$callid)
+db$forward<-as.factor(db$forward)
+db$confer<-as.factor(db$confer)
+db$owntv<-as.factor(db$owntv)
+db$ownvcr<-as.factor(db$ownvcr)
+db$owndvd<-as.factor(db$owndvd)
+db$owncd<-as.factor(db$owncd)
+db$ownpda<-as.factor(db$ownpda)
+db$ownpc<-as.factor(db$ownpc)
+db$ownipod<-as.factor(db$ownipod)
+db$owngame<-as.factor(db$owngame)
+db$ownfax<-as.factor(db$ownfax)
+db$news<-as.factor(db$news)
+db$response_01<-as.factor(db$response_01)
+db$response_02<-as.factor(db$response_02)
+db$response_03<-as.factor(db$response_03)
+```
+
+Ahora veamos que columnas tienen una alta cantidad de valores nulos
+
+```{r}
+plot_missing(db,missing_only = TRUE)
+```
+
+Se pasan a eliminar las columans con datos faltantes mayores al 20% (5 columnas)
+
+```{r}
+db<-db[, colMeans(is.na(db)) <= .2]
+dim(db)
+```
+A continuación podemos ver las columnas que quedan con datos faltantes
+
+```{r}
+plot_missing(db,missing_only = TRUE)
+```
+Ahora, se pasará a imputar estas columnas
+
+```{r}
+db<-kNN(db)
+db<-db%>%select(-ends_with("_imp")) #Para eliminar las adicionales que se generan en la imputación
+```
+
+Finalmente, guardamos una copia de seguridad de los datos limpios
+
+```{r}
+write.csv(db,"db_clean.csv")
+```
+

@@ -1,0 +1,102 @@
+---
+title: "Analyze 1 - Modelo Predictivo: Regresión Logistica"
+author: "Edwin Santos"
+date: "4/1/2022"
+output: html_document
+---
+
+```{r}
+library(DataExplorer) #para datos faltantes
+library(dplyr) #Para manejo de bases de datos
+library(caTools) #Para predicción de datos
+library(VIM) #para imputación de datos faltantes
+library(randomForest)
+library(tibble)
+library(ggplot2)
+library(tidyverse)
+library(viridis)
+library(plyr)
+library(heatmaply)
+library(caret)
+```
+
+
+Se plantea realizar un modelo de regresión logistica para predecir en base a todas las demás variables la posibilidad de que una persona posea un auto de lujo. Esto permitirá también encontrar las variables más importantes que determinen el perfil del cliente.
+
+Primero, se crea una columna condicional que indica las personas que tienen un auto de lujo (carcatvalue=3). Adicionalmente, quitamos la columna carcatvalue ya que está directamente relacionada con esta columna nueva que estamos creando
+
+```{r}
+db$lujo_si<-ifelse(db$carcatvalue==3,0,1)
+```
+
+Ahora se pasará a tomar una muestra aleatoria del total
+
+```{r}
+#Se dividen los datos para entrenamiento (75% de train y 25% de test)
+
+set.seed(88)
+split=sample.split(db$lujo_si,SplitRatio = 0.75)
+
+
+#Crear el training y testing data sets
+
+dt=subset(db,split==TRUE)  #Train
+de=subset(db,split==FALSE) #Test
+```
+
+Se quitará la columna de customer ID ya que es totalmente aleatoria y no sirve para el análisis
+
+```{r}
+dt$custid<-NULL
+de$custid<-NULL
+```
+
+Modelo de regresión
+
+```{r}
+RL_Eur<-glm(lujo_si~cardtype+card2+income+tollfree+forward+ebill+cardspent+spoused+forward+pets_reptiles,data=dt,family = binomial())
+
+summary(RL_Eur)
+```
+
+Veamos los datos del modelo
+
+```{r}
+predictions<-predict(RL_Eur,de)
+```
+
+
+
+```{r}
+sigmoide=function(x){1/(1+exp(-x))}
+
+plot(predictions,sigmoide(predictions),col="blue")
+```
+
+
+```{r}
+mod_pred<-ifelse(predictions>0.5,1,0)
+```
+
+
+```{r}
+mod_pred<-factor(mod_pred)
+
+head(mod_pred)
+
+de$lujo_si<-factor(de$lujo_si)
+
+head(de$lujo_si)
+
+```
+
+
+
+```{r}
+confusionMatrix(mod_pred,de$lujo_si)
+```
+
+
+
+
+

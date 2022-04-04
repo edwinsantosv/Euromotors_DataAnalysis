@@ -1,0 +1,493 @@
+---
+title: "Caso Euromotors"
+output:
+  html_notebook: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+
+library(DataExplorer) #para datos faltantes
+library(VIM) #para imputación de datos faltantes
+library(dplyr) #Para la manipulación de bases de datos
+library(caTools) #Para predicción de datos
+library(VIM) #para imputación de datos faltantes
+library(randomForest)
+library(tibble)
+library(ggplot2)
+library(tidyverse)
+library(viridis)
+library(plyr)
+library(heatmaply)
+library(caret)
+library(reshape)
+
+```
+
+# 1. Planteamiento del problema
+
+En este notebook les mostraré paso a paso el análisis del problema propuesto. El objetivo de este ejercicio es la resolución de las siguientes incógnitas:
+
+**1. ¿Cómo son los clientes de lujo para enfocar las estrategias de marketing?**
+
+    - Seleccionar las 10 variables más importantes del dataset
+    
+    - ¿Son los precios similares a los de la realidad?
+    
+**2. ¿Cómo hacer la campaña de marketing más efectiva?**
+
+    - Seleccionar las variables más relevantes
+    
+    - ¿De qué manera confirmaría que la propuesta es la adecuada?
+
+\pagebreak
+
+# 2. Información general
+
+Los pasos a seguir son los siguientes:
+
+**A) Limpieza de la data**
+
+**B) Exploración de los datos**
+
+**C) Construcción del modelo**
+
+**D) Revisión de los resultados**
+  
+\pagebreak
+
+
+# 3. Planeamiento del proyecto
+
+Cuando estoy por empezar un proyecto, me gusta poner el plan que llevaré a cabo.
+
+*Entender la naturaleza de la data (summary(), str())*
+
+*Histogramas y boxplots*
+
+*Conteo de valores*
+
+*Manipulación de valores nulos*
+
+*Correlación entre métricas*
+
+*Exploración de temas interesantes*
+
+  - ¿A mayores ingresos tienen más posibilidades de tener un auto de lujo?
+    
+    - Sería interesante la revisión de las tarjetas de crédito y deudas
+  
+  - ¿El tipo de trabajo está relacionado con tener un auto de lujo?
+  
+  - ¿Por qué tipo de medio se informan las personas con autos de lujo?
+    
+    - Hay datos sobre periódicos, internet y noticias en general
+  
+  - ¿La edad y el sexo están relacionados con tener un auto de lujo?
+  
+*Feature engineering*
+
+*Construcción del modelo*
+
+*Test del modelo (matriz de confusión)*
+
+\pagebreak
+
+
+# 4. Limpieza de la data
+
+## Lectura incial de datos
+
+Para empezar, se leen los datos del csv y se ve las dimensiones
+
+```{r}
+db<-read.csv("Base de datos caso práctico.csv")
+
+#View(db)
+
+dim(db)
+
+```
+
+Son 5000 filas y 124 columnas
+
+```{r}
+summary(db)
+```
+
+
+
+## Busqueda de duplicados
+
+Se ve, por si acaso, si es que hay duplicados en el id de cliente
+
+```{r}
+n_occur<-data.frame(table(db$custid))
+n_occur[n_occur$Freq>1,]
+```
+
+
+No hay customers duplicados
+
+
+## Cambio de variables categóricas a factor
+
+Se cambian todas las variables categóricas a factores:
+
+```{r}
+db$region<-as.factor(db$region)
+db$townsize<-as.factor(db$townsize)
+db$gender<-as.factor(db$gender)
+db$agecat<-as.factor(db$agecat)
+db$edcat<-as.factor(db$edcat)
+db$jobcat<-as.factor(db$jobcat)
+db$union<-as.factor(db$union)
+db$empcat<-as.factor(db$empcat)
+db$retire<-as.factor(db$retire)
+db$inccat<-as.factor(db$inccat)
+db$default<-as.factor(db$default)
+db$jobsat<-as.factor(db$jobsat)
+db$marital<-as.factor(db$marital)
+db$spousedcat<-as.factor(db$spousedcat)
+db$homeown<-as.factor(db$homeown)
+db$hometype<-as.factor(db$hometype)
+db$addresscat<-as.factor(db$addresscat)
+db$carown<-as.factor(db$carown)
+db$cartype<-as.factor(db$cartype)
+db$carcatvalue<-as.factor(db$carcatvalue)
+db$carbought<-as.factor(db$carbought)
+db$carbuy<-as.factor(db$carbuy)
+db$carcatvalue<-as.factor(db$carcatvalue)
+db$commute<-as.factor(db$commute)
+db$commutecat<-as.factor(db$commutecat)
+db$commutecar<-as.factor(db$commutecar)
+db$commuterail<-as.factor(db$commuterail)
+db$commutebus<-as.factor(db$commutebus)
+db$commutemotorcycle<-as.factor(db$commutemotorcycle)
+db$commutepublic<-as.factor(db$commutepublic)
+db$commutebike<-as.factor(db$commutebike)
+db$commutewalk<-as.factor(db$commutewalk)
+db$commutenonmotor<-as.factor(db$commutenonmotor)
+db$telecommute<-as.factor(db$telecommute)
+db$reason<-as.factor(db$reason)
+db$birthmonth<-as.factor(db$birthmonth)
+db$polview<-as.factor(db$polview)
+db$ebill<-as.factor(db$ebill)
+db$polparty<-as.factor(db$polparty)
+db$vote<-as.factor(db$vote)
+db$card<-as.factor(db$card)
+db$cardtype<-as.factor(db$cardtype)
+db$cardbenefit<-as.factor(db$cardbenefit)
+db$card2<-as.factor(db$card2)
+db$card2type<-as.factor(db$card2type)
+db$card2benefit<-as.factor(db$card2benefit)
+db$active<-as.factor(db$active)
+db$bfast<-as.factor(db$bfast)
+db$churn<-as.factor(db$churn)
+db$tollfree<-as.factor(db$tollfree)
+db$equip<-as.factor(db$equip)
+db$callcard<-as.factor(db$callcard)
+db$wireless<-as.factor(db$wireless)
+db$wiremon<-as.factor(db$wiremon)
+db$multline<-as.factor(db$multline)
+db$voice<-as.factor(db$voice)
+db$pager<-as.factor(db$pager)
+db$internet<-as.factor(db$internet)
+db$callid<-as.factor(db$callid)
+db$forward<-as.factor(db$forward)
+db$confer<-as.factor(db$confer)
+db$owntv<-as.factor(db$owntv)
+db$ownvcr<-as.factor(db$ownvcr)
+db$owndvd<-as.factor(db$owndvd)
+db$owncd<-as.factor(db$owncd)
+db$ownpda<-as.factor(db$ownpda)
+db$ownpc<-as.factor(db$ownpc)
+db$ownipod<-as.factor(db$ownipod)
+db$owngame<-as.factor(db$owngame)
+db$ownfax<-as.factor(db$ownfax)
+db$news<-as.factor(db$news)
+db$card2fee<-as.factor(db$card2fee)
+db$response_01<-as.factor(db$response_01)
+db$response_02<-as.factor(db$response_02)
+db$response_03<-as.factor(db$response_03)
+db$polcontrib<-as.factor(db$polcontrib)
+db$cardfee<-as.factor(db$cardfee)
+db$commutecarpool<-as.factor(db$commutecarpool)
+db$callwait<-as.factor(db$callwait)
+db$ebill<-as.factor(db$ebill)
+```
+
+
+## Visualización de valores nulos
+
+Ahora veamos qué columnas tienen una alta cantidad de valores nulos
+
+```{r}
+plot_missing(db,missing_only = TRUE)
+```
+
+Se pasan a eliminar las columans con datos faltantes mayores al 20% (5 columnas)
+
+```{r}
+db<-db[, colMeans(is.na(db)) <= .2]
+dim(db)
+```
+
+A continuación podemos ver las columnas que quedan con datos faltantes
+
+```{r}
+plot_missing(db,missing_only = TRUE)
+```
+Ahora, se pasará a imputar estas columnas
+
+```{r}
+db<-kNN(db)
+db<-db%>%select(-ends_with("_imp")) #Para eliminar las columnas adicionales que se generan en la imputación
+```
+
+Se crea una columna condicional que indica las personas que tienen un auto de lujo (carcatvalue=3)
+
+```{r}
+db$lujo_si<-ifelse(db$carcatvalue==3,1,0)
+
+db$lujo_si<-as.factor(db$lujo_si)
+```
+
+Finalmente, guardamos una copia de seguridad de los datos tratados
+
+```{r}
+write.csv(db,"db_clean.csv")
+```
+
+
+# 5. Creación del modelo
+
+Separemos primero las columnas numéricas de las categóricas
+
+```{r}
+db_num<-db %>% dplyr::select(where(is.numeric))
+db_cat<-db %>% dplyr::select(where(is.factor))
+```
+
+**Datos Numéricos**
+
+```{r}
+
+par(mfrow=c(2,2))
+
+for (i in 1:ncol(db_num)){
+  hist(db_num[[i]], main=paste("Plot ", colnames(db_num[i])), xlab = paste("Values Plot",i)) 
+  box(lty = "solid")
+}
+
+
+```
+
+Veamos la comparación de los boxplots por categoría de auto
+
+```{r}
+
+ggplot(db,aes(x=carcatvalue,y=carvalue,color=carcatvalue))+
+  geom_boxplot(outlier.colour = "black",notch = FALSE)+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  geom_jitter(color="gray", size=0.4, alpha=0.15)
+
+```
+Podemos ver que los datos para la categoría de lujo están bastante más dispersos que en las otras categorías. Además, su mediana tiende a la baja.
+
+
+Veamos también más detenidamente la cantidad de personas por valor del auto
+
+```{r}
+std_values<-ddply(db,"carcatvalue",summarise,Min=min(carvalue),Max=max(carvalue),Mean=mean(carvalue),sd=sd(carvalue))
+
+
+ggplot(db,aes(x=carvalue,color=carcatvalue))+geom_histogram(fill="white",alpha=0.5,position = "identity")+
+  geom_vline(data = std_values,aes(xintercept=Mean,color=carcatvalue),linetype="dashed")+
+  theme(axis.text.x = element_text(angle = 90,size = 10))
+```
+
+Podemos ver que a medida que crece el valor del auto, decrece la cantidad de personas que lo tienen.
+
+*Datos generales*
+
+Comparemos a las personas que tienen autos de lujo vs las que no, de acuerdo a las medias de sus valores numéricos
+
+```{r}
+db%>%group_by(lujo_si)%>%summarise(mean(age),median(age),mean(ed),mean(spoused))
+```
+
+Son personas de una edad mayor a las personas que no tienen autos de lujo. Además, su educación es un poco mayor en promedio, pero no tanto como para decir que es un rasgo preponderante. 
+
+Con el género y estado civil sucede algo similar. Se puede ver que la mayoría son mujeres y que el mayor estado civil es soltero; no obstante, la diferencia es muy pequeña:
+
+```{r,echo=FALSE}
+db_lujo<-db %>% filter(lujo_si==1)
+
+gender_table<-count(db_lujo,"gender")
+
+all_lujo<-sum(gender_table$freq)
+
+gender_table$percentage<-(gender_table$freq/all_lujo)*100
+
+marital_table<-count(db_lujo,"marital")
+
+marital_table$percentage<-(marital_table$freq/all_lujo)*100
+
+ggplot(gender_table,aes(x="", y=percentage ,fill=gender))+
+  geom_bar(stat="identity")+
+  coord_polar("y",start=0)+
+  theme_void()
+
+gender_table
+
+ggplot(marital_table,aes(x="", y=percentage ,fill=marital))+
+  geom_bar(stat="identity")+
+  coord_polar("y",start=0)+
+  theme_void()
+
+marital_table
+
+
+```
+
+```{r}
+jcat<-db%>%group_by(lujo_si,jobcat)%>%summarise(count=n())
+cast(jcat,jobcat~lujo_si,value = "count")
+```
+
+
+*Datos de empleo e ingresos*
+
+```{r}
+db%>%group_by(lujo_si)%>%summarise(mean(income),mean(employ),mean(creddebt),mean(cardspent))
+```
+
+Otro rasgo característico de estas personas es que tienen unos sueldos muy altos (más de 136 000 al año) y están en el mismo trabajo desde hace 16 años (employ). El débito en sus tarjetas de crédito también es mayor.
+
+Veamos también lo correspondiente a las tarjetas
+
+```{r}
+card_tb<-db%>%group_by(lujo_si,cardtype)%>%summarise(count=n())
+cast(card_tb,cardtype~lujo_si,value = "count")
+```
+
+Respecto a si realizan facturaciones electrónicas
+
+```{r}
+elect<-db%>%group_by(lujo_si,ebill)%>%summarise(count=n())
+cast(elect,ebill~lujo_si,value = "count")
+```
+
+*Datos de publicidad*
+
+```{r}
+db%>%group_by(lujo_si)%>%summarise(mean(hourstv))
+```
+
+
+```{r}
+db%>%group_by(lujo_si)%>%summarise(mean(hourstv))
+```
+
+
+
+```{r}
+nw<-db%>%group_by(lujo_si,news)%>%summarise(count=n())
+cast(nw,news~lujo_si,value = "count")
+```
+
+
+# 5. Planteamiento del modelo
+
+Se plantea realizar un modelo de regresión logistica para predecir en base a las variables seleccionadas la posibilidad de que una persona posea un auto de lujo. Esto permitirá comprobar que las variables seleccionadas son las más adecuadas para el caso planteado
+
+Ahora se pasará a tomar una muestra aleatoria del total
+
+```{r}
+#Se dividen los datos para entrenamiento (75% de train y 25% de test)
+
+set.seed(88)
+split=sample.split(db$lujo_si,SplitRatio = 0.75)
+
+
+#Crear el training y testing data sets
+
+dt=subset(db,split==TRUE)  #Train
+de=subset(db,split==FALSE) #Test
+```
+
+Modelo de regresión
+
+```{r}
+RL_Eur<-glm(lujo_si~income+tollfree+cardtype+forward+ebill+cardspent+spoused+forward+jobcat+pets_reptiles,data=dt,family = binomial())
+
+summary(RL_Eur)
+```
+
+```{r}
+predictions<-predict(RL_Eur,de)
+```
+
+# 6. Comprobación de resultados
+
+```{r}
+sigmoide=function(x){1/(1+exp(-x))}
+
+plot(predictions,sigmoide(predictions),col="blue")
+```
+
+```{r}
+mod_pred<-ifelse(predictions>0.5,1,0)
+```
+
+
+```{r}
+mod_pred<-factor(mod_pred)
+
+head(mod_pred)
+
+de$lujo_si<-factor(de$lujo_si)
+
+head(de$lujo_si)
+
+```
+
+
+```{r}
+confusionMatrix(mod_pred,de$lujo_si)
+```
+
+# 7. Comparación de precios de autos con el dataset
+
+Se hizo un scrape de precios de algunas marcas de lujo
+
+```{r}
+car_prices<-readxl::read_excel("Scrapes.xlsx")
+head(car_prices)
+dim(car_prices)
+```
+
+
+```{r}
+
+ggplot(car_prices,aes(x=Marca,y=Price,color=Marca))+
+  geom_boxplot(outlier.colour = "black",notch = FALSE)+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6) +
+  geom_jitter(color="gray", size=0.4, alpha=0.15)
+
+```
+
+```{r}
+car_prices%>%summarise(mean(Price),median(Price),min(Price),max(Price))
+```
+```{r}
+db%>% filter(lujo_si==1)%>%summarise(mean(carvalue),median(carvalue),min(carvalue),max(carvalue))
+```
+
+
+
+
+

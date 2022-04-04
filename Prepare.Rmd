@@ -1,0 +1,126 @@
+---
+title: 'Marketing Analysis Euromotors: Prepare'
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+###Importación de librerías
+
+```{r}
+library(DataExplorer) #para datos faltantes
+library(dplyr) #Para manejo de bases de datos
+library(caTools) #Para predicción de datos
+library(VIM) #para imputación de datos faltantes
+library(randomForest)
+library(tibble)
+library(ggplot2)
+library(tidyverse)
+library(viridis)
+library(plyr)
+library(heatmaply)
+```
+
+
+###Lectura de datos del CSV
+
+```{r}
+db<-read.csv("Base de datos caso práctico.csv")
+
+View(db)
+
+dim(db)
+
+```
+
+Son 5000 filas y 124 columnas
+
+
+
+
+###Busqueda de duplicados
+
+```{r}
+n_occur<-data.frame(table(db$custid))
+n_occur[n_occur$Freq>1,]
+```
+
+
+No hay customers duplicados
+
+
+###Cambio de variables categóricas a factors
+
+```{r}
+db$region<-as.factor(db$region)
+db$townsize<-as.factor(db$townsize)
+db$gender<-as.factor(db$gender)
+db$agecat<-as.factor(db$agecat)
+db$edcat<-as.factor(db$edcat)
+db$jobcat<-as.factor(db$jobcat)
+db$union<-as.factor(db$union)
+db$empcat<-as.factor(db$empcat)
+db$retire<-as.factor(db$retire)
+db$inccat<-as.factor(db$inccat)
+db$default<-as.factor(db$default)
+db$jobsat<-as.factor(db$jobsat)
+db$marital<-as.factor(db$marital)
+db$spoused<-as.factor(db$spoused)
+db$spousedcat<-as.factor(db$spousedcat)
+db$homeown<-as.factor(db$homeown)
+db$hometype<-as.factor(db$hometype)
+db$addresscat<-as.factor(db$addresscat)
+db$carown<-as.factor(db$carown)
+db$cartype<-as.factor(db$cartype)
+db$carcatvalue<-as.factor(db$carcatvalue)
+db$carbought<-as.factor(db$carbought)
+db$carbuy<-as.factor(db$carbuy)
+db$carcatvalue<-as.factor(db$carcatvalue)
+db$commute<-as.factor(db$commute)
+db$commutecat<-as.factor(db$commutecat)
+db$commutecar<-as.factor(db$commutecar)
+db$commutemotorcycle<-as.factor(db$commutemotorcycle)
+db$commutepublic<-as.factor(db$commutepublic)
+db$commutebike<-as.factor(db$commutebike)
+db$commutewalk<-as.factor(db$commutewalk)
+db$commutenonmotor<-as.factor(db$commutenonmotor)
+db$telecommute<-as.factor(db$telecommute)
+db$reason<-as.factor(db$reason)
+db$birthmonth<-as.factor(db$birthmonth)
+```
+
+
+Añadido de columna condicional: ¿Tienen vehículo de lujo?
+
+```{r}
+
+db$lujo_si<-ifelse(db$carcatvalue==3,1,0)
+head(db$lujo_si,20)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
